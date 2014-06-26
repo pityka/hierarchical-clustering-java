@@ -19,13 +19,13 @@ package com.apporiented.algorithm.clustering;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Cluster {
+public class Cluster<T> {
 
-	private String name;
+	private T name;
 	
-	private Cluster parent;
+	private Cluster<T> parent;
 
-	private List<Cluster> children;
+	private List<Cluster<T>> children;
 
 	private Double distance;
 
@@ -37,15 +37,15 @@ public class Cluster {
 		this.distance = distance;
 	}
 
-	public List<Cluster> getChildren() {
+	public List<Cluster<T>> getChildren() {
 		if (children == null) {
-			children = new ArrayList<Cluster>();
+			children = new ArrayList<Cluster<T>>();
 		}
 
 		return children;
 	}
 
-	public void setChildren(List<Cluster> children) {
+	public void setChildren(List<Cluster<T>> children) {
 		this.children = children;
 	}
 
@@ -58,15 +58,15 @@ public class Cluster {
 	}
 
 	
-	public Cluster(String name) {
+	public Cluster(T name) {
 		this.name = name;
 	}
 
-	public String getName() {
+	public T getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(T name) {
 		this.name = name;
 	}
 
@@ -86,13 +86,22 @@ public class Cluster {
 
 	@Override
 	public boolean equals(Object obj) {
-		String otherName = obj != null ? obj.toString() : "";
-		return toString().equals(otherName);
+		if (!(obj instanceof Cluster))
+			return false;
+		if (obj == this)
+			return true;
+		if (obj == null)
+			return false;
+		
+		return ((Cluster)obj).getName().equals(getName());
+
+		// String otherName = obj != null ? obj.toString() : "";
+		// return toString().equals(otherName);
 	}
 
 	@Override
 	public int hashCode() {
-		return toString().hashCode();
+		return getName().hashCode();
 	}
 
 	public boolean isLeaf() {
@@ -103,7 +112,7 @@ public class Cluster {
 	    return countLeafs(this, 0);
 	}
 
-    public int countLeafs(Cluster node, int count) {
+    public int countLeafs(Cluster<T> node, int count) {
         if (node.isLeaf()) count++;
         for (Cluster child : node.getChildren()) {
             count += child.countLeafs();

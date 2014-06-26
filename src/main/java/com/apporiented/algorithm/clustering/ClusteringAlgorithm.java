@@ -18,7 +18,7 @@ package com.apporiented.algorithm.clustering;
 
 public interface ClusteringAlgorithm {
 
-	public Cluster performClustering(double[][] distances,
-	        String[] clusterNames, LinkageStrategy linkageStrategy);
+	public <T> Cluster performClustering(double[][] distances,
+	        T[] clusterNames, LinkageStrategy linkageStrategy);
 
 }

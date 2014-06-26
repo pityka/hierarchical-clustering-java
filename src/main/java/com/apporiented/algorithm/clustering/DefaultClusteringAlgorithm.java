@@ -17,13 +17,14 @@
 package com.apporiented.algorithm.clustering;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
 
 	@Override
-	public Cluster performClustering(double[][] distances,
-	        String[] clusterNames, LinkageStrategy linkageStrategy) {
+	public <T> Cluster<T> performClustering(double[][] distances,
+	        T[] clusterNames, LinkageStrategy linkageStrategy) {
 
 		/* Argument checks */
 		if (distances == null || distances.length == 0
@@ -38,8 +39,8 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
 		}
 
 		/* Setup model */
-		List<Cluster> clusters = createClusters(clusterNames);
-		List<ClusterPair> linkages = createLinkages(distances, clusters);
+		List<Cluster<T>> clusters = createClusters(clusterNames);
+		LinkedList<ClusterPair> linkages = createLinkages(distances, clusters);
 
 		/* Process */
 		HierarchyBuilder builder = new HierarchyBuilder(clusters, linkages);
@@ -50,9 +51,9 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
 		return builder.getRootCluster();
 	}
 
-	private List<ClusterPair> createLinkages(double[][] distances,
-	        List<Cluster> clusters) {
-		List<ClusterPair> linkages = new ArrayList<ClusterPair>();
+	private <T> LinkedList<ClusterPair> createLinkages(double[][] distances,
+	        List<Cluster<T>> clusters) {
+		LinkedList<ClusterPair> linkages = new LinkedList<ClusterPair>();
 		for (int col = 0; col < clusters.size(); col++) {
 			for (int row = col + 1; row < clusters.size(); row++) {
 				ClusterPair link = new ClusterPair();
@@ -65,9 +66,9 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
 		return linkages;
 	}
 
-	private List<Cluster> createClusters(String[] clusterNames) {
-		List<Cluster> clusters = new ArrayList<Cluster>();
-        for (String clusterName : clusterNames) {
+	private <T> List<Cluster<T>> createClusters(T[] clusterNames) {
+		List<Cluster<T>> clusters = new ArrayList<Cluster<T>>();
+        for (T clusterName : clusterNames) {
             Cluster cluster = new Cluster(clusterName);
             clusters.add(cluster);
         }

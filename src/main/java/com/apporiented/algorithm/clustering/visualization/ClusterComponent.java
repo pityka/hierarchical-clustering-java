@@ -25,9 +25,9 @@ import java.util.List;
 import com.apporiented.algorithm.clustering.Cluster;
 
 
-public class ClusterComponent implements Paintable {
+public class ClusterComponent<T> implements Paintable {
 
-	private Cluster cluster;
+	private Cluster<T> cluster;
 	private VCoord linkPoint;
 	private VCoord initPoint;
     private boolean printName;
@@ -114,7 +114,7 @@ public class ClusterComponent implements Paintable {
         g.drawLine(x1, y1, x2, y2);
 
         if (cluster.isLeaf()) {
-            g.drawString(cluster.getName(), x1 + namePadding, y1 + (fontMetrics.getHeight()/2) - 2);
+            g.drawString(cluster.getName().toString(), x1 + namePadding, y1 + (fontMetrics.getHeight()/2) - 2);
         }
         if (decorated && cluster.getDistance() != null && !cluster.getDistance().isNaN() && cluster.getDistance() > 0) {
             String s = String.format("%.2f", cluster.getDistance());
@@ -180,7 +180,7 @@ public class ClusterComponent implements Paintable {
     public int getNameWidth(Graphics2D g, boolean includeNonLeafs) {
         int width = 0;
         if (includeNonLeafs || cluster.isLeaf()) {
-            Rectangle2D rect =  g.getFontMetrics().getStringBounds(cluster.getName(), g);
+            Rectangle2D rect =  g.getFontMetrics().getStringBounds(cluster.getName().toString(), g);
             width = (int)rect.getWidth();
         }
         return width;

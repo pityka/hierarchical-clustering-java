@@ -20,74 +20,135 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.PriorityQueue;
+import java.util.HashMap;
 
-public class HierarchyBuilder {
+public class HierarchyBuilder<T> {
 
-	private List<ClusterPair> distances;
-	private List<Cluster> clusters;
+	private List<Cluster<T>> clusters;
+	private HashMap<Cluster<T>,PriorityQueue<ClusterPair>> distancesIndex;
+	private HashMap<Cluster<T>,HashMap<Cluster<T>,ClusterPair>> distancesIndex2D;
 
-	public List<ClusterPair> getDistances() {
-		return distances;
-	}
-
-	public List<Cluster> getClusters() {
+	public List<Cluster<T>> getClusters() {
 		return clusters;
 	}
 
-	public HierarchyBuilder(List<Cluster> clusters, List<ClusterPair> distances) {
+	public HierarchyBuilder(List<Cluster<T>> clusters, LinkedList<ClusterPair> distances) {
 		this.clusters = clusters;
-		this.distances = distances;
+		this.distancesIndex = new HashMap();
+		this.distancesIndex2D = new HashMap();
+
+
+		for (ClusterPair link : distances) {
+			Cluster<T> left = link.getlCluster();
+			Cluster<T> right = link.getrCluster();
+
+			if (distancesIndex.containsKey(left)) {
+				PriorityQueue<ClusterPair> list = distancesIndex.get(left);
+				list.add(link);
+			} else {
+				PriorityQueue<ClusterPair> list = new PriorityQueue();
+				list.add(link);
+				distancesIndex.put(left,list);
+			}
+			if (distancesIndex.containsKey(right)) {
+				PriorityQueue<ClusterPair> list = distancesIndex.get(right);
+				list.add(link);
+			} else {
+				PriorityQueue<ClusterPair> list = new PriorityQueue();
+				list.add(link);
+				distancesIndex.put(right,list);
+			}
+
+			if (distancesIndex2D.containsKey(left)) {
+				distancesIndex2D.get(left).put(right,link);
+			} else {
+				HashMap<Cluster<T>,ClusterPair> list = new HashMap();
+				list.put(right,link);
+				distancesIndex2D.put(left,list);
+			}
+			if (distancesIndex2D.containsKey(right)) {
+				distancesIndex2D.get(right).put(left,link);
+			} else {
+				HashMap<Cluster<T>,ClusterPair> list = new HashMap();
+				list.put(left,link);
+				distancesIndex2D.put(right,list);
+			}
+
+		} 
+
+	}
+
+	public ClusterPair getMin() {
+		ClusterPair min = null;
+		PriorityQueue<ClusterPair> minpq = null;
+		for (PriorityQueue<ClusterPair> pq : distancesIndex.values()) {
+			ClusterPair cp = pq.peek();
+			if (cp != null && (min == null || cp.getLinkageDistance() < min.getLinkageDistance())) {
+				min = cp;
+				minpq = pq;
+			}
+		}
+		minpq.poll();
+		distancesIndex.get(min.getlCluster()).remove(min);
+		distancesIndex.get(min.getrCluster()).remove(min);
+		return min;
 	}
 
 	public void agglomerate(LinkageStrategy linkageStrategy) {
-		Collections.sort(distances);
-		if (distances.size() > 0) {
-			ClusterPair minDistLink = distances.remove(0);
+		ClusterPair minDistLink = getMin();
+		if (minDistLink != null) {			
+			
 			clusters.remove(minDistLink.getrCluster());
 			clusters.remove(minDistLink.getlCluster());
 
 			Cluster oldClusterL = minDistLink.getlCluster();
 			Cluster oldClusterR = minDistLink.getrCluster();
 			Cluster newCluster = minDistLink.agglomerate(null);
+			PriorityQueue<ClusterPair> newList = new PriorityQueue();
+			HashMap<Cluster<T>,ClusterPair> newMap = new HashMap();
 
 			for (Cluster iClust : clusters) {
 				ClusterPair link1 = findByClusters(iClust, oldClusterL);
 				ClusterPair link2 = findByClusters(iClust, oldClusterR);
 				ClusterPair newLinkage = new ClusterPair();
+				newList.add(newLinkage);
+				newMap.put(iClust,newLinkage);
+
 				newLinkage.setlCluster(iClust);
 				newLinkage.setrCluster(newCluster);
 				Collection<Double> distanceValues = new ArrayList<Double>();
 				if (link1 != null) {
 					distanceValues.add(link1.getLinkageDistance());
-					distances.remove(link1);
+					distancesIndex.get(oldClusterL).remove(link1);
+					distancesIndex.get(iClust).remove(link1);
 				}
 				if (link2 != null) {
 					distanceValues.add(link2.getLinkageDistance());
-					distances.remove(link2);
+					distancesIndex.get(oldClusterR).remove(link2);
+					distancesIndex.get(iClust).remove(link2);
 				}
-				Double newDistance = linkageStrategy
-				        .calculateDistance(distanceValues);
-				newLinkage.setLinkageDistance(newDistance);
-				distances.add(newLinkage);
+				Double newDistance = linkageStrategy.calculateDistance(distanceValues);
+				newLinkage.setLinkageDistance(newDistance);				
+				distancesIndex.get(iClust).add(newLinkage);
+
+				
+				distancesIndex2D.get(iClust).put(newCluster,newLinkage);
+
 
 			}
+			
+			distancesIndex.put(newCluster,newList);
+			distancesIndex2D.put(newCluster,newMap);
 			clusters.add(newCluster);
 		}
 	}
 
-	private ClusterPair findByClusters(Cluster c1, Cluster c2) {
-		ClusterPair result = null;
-		for (ClusterPair link : distances) {
-			boolean cond1 = link.getlCluster().equals(c1)
-			        && link.getrCluster().equals(c2);
-			boolean cond2 = link.getlCluster().equals(c2)
-			        && link.getrCluster().equals(c1);
-			if (cond1 || cond2) {
-				result = link;
-				break;
-			}
-		}
-		return result;
+	private ClusterPair findByClusters(Cluster c1, Cluster c2) {	
+		return distancesIndex2D.get(c1).get(c2);
 	}
 
 	public boolean isTreeComplete() {

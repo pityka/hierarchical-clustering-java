@@ -31,7 +31,7 @@ import com.apporiented.algorithm.clustering.Cluster;
 import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
 
-public class DendrogramPanel extends JPanel {
+public class DendrogramPanel<T> extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -167,7 +167,7 @@ public class DendrogramPanel extends JPanel {
         hModel = maxY - minY;
     }
 
-    private ClusterComponent createComponent(Cluster cluster, VCoord initCoord, double clusterHeight) {
+    private ClusterComponent createComponent(Cluster<T> cluster, VCoord initCoord, double clusterHeight) {
 
         ClusterComponent comp = null;
         if (cluster != null) {
@@ -175,7 +175,7 @@ public class DendrogramPanel extends JPanel {
             double leafHeight = clusterHeight / cluster.countLeafs();
             double yChild = initCoord.getY() - (clusterHeight / 2);
             double distance = cluster.getDistance() == null ? 0 : cluster.getDistance();
-            for (Cluster child : cluster.getChildren()) {
+            for (Cluster<T> child : cluster.getChildren()) {
                 int childLeafCount = child.countLeafs();
                 double childHeight = childLeafCount * leafHeight;
                 double childDistance = child.getDistance() == null ? 0 : child.getDistance();
